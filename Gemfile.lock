@@ -99,6 +99,7 @@ GEM
       railties (>= 3.2, < 5.1)
     friendly_id (5.1.0)
       activerecord (>= 4.0.0)
+    geocoder (1.4.4)
     globalid (0.3.7)
       activesupport (>= 4.1.0)
     handlebars_assets (0.23.1)
@@ -328,6 +329,7 @@ PLATFORMS
 DEPENDENCIES
   byebug
   coffee-rails (~> 4.1.0)
+  geocoder
   jbuilder (~> 2.0)
   jquery-rails
   pg

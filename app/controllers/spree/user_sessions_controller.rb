@@ -8,6 +8,7 @@ class Spree::UserSessionsController < Devise::SessionsController
   include Spree::Core::ControllerHelpers::Common
   include Spree::Core::ControllerHelpers::Order
   include Spree::Core::ControllerHelpers::Store
+  include AppsensorHelper
 
   # This is included in ControllerHelpers::Order.  We just want to call
   # it after someone has successfully logged in.
@@ -15,7 +16,11 @@ class Spree::UserSessionsController < Devise::SessionsController
 
   def create
     authenticate_spree_user!
-
+    appsensor_event(params["spree_user"]["email"],
+                    request.remote_ip,
+                    request.location.data["latitude"],
+                    request.location.data["longitude"],
+                    "AE4")
     if spree_user_signed_in?
       respond_to do |format|
         format.html do
