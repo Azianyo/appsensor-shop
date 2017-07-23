@@ -36,16 +36,16 @@ module AppsensorHelper
                 }
               },
               detectionPoint: { category: get_appsensor_event_type(event_label), label: event_label, responses: [] },
-              timestamp: Time.now.utc.iso8601, #"2017-07-01T15:02:45.392Z"
+              timestamp: Time.now.utc.iso8601(3), #"2017-07-01T15:02:45.392Z" \"timestamp\":\"2017-07-16T16:38:44Z\"
               detectionSystem: { detectionSystemId: "myclientapp" },
               metadata: []
             }
 
     request.body = body.to_json
+    puts get_appsensor_event_message(event_label)
     res = Net::HTTP.start(uri.hostname, uri.port) do |http|
       http.request(request)
     end
-    puts get_appsensor_event_message(event_label)
   end
 
   def get_appsensor_event_type(event_label)

@@ -16,11 +16,9 @@ class Spree::UserSessionsController < Devise::SessionsController
 
   def create
     authenticate_spree_user!
-    appsensor_event(params["spree_user"]["email"],
-                    request.remote_ip,
-                    request.location.data["latitude"],
-                    request.location.data["longitude"],
-                    "AE4")
+    if params["spree_user"]["email"].length > 5
+      appsensor_event(params["spree_user"]["email"],request.remote_ip,request.location.data["latitude"],request.location.data["longitude"],"AE4")
+    end
     if spree_user_signed_in?
       respond_to do |format|
         format.html do
