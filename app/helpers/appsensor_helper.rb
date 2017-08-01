@@ -46,6 +46,7 @@ module AppsensorHelper
     res = Net::HTTP.start(uri.hostname, uri.port) do |http|
       http.request(request)
     end
+    puts res
   end
 
   def get_appsensor_event_type(event_label)
@@ -58,5 +59,45 @@ module AppsensorHelper
     event_msg = APPSENSOR_EVENT_MESSAGES[event_label]
     return "Unknown Event" unless event_msg
     event_msg
+  end
+
+  def too_many_chars_in_username(username, request)
+    if username.length > 200
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE4")
+    end
+  end
+
+  def too_many_chars_in_password(password, request)
+    if password.length > 5
+      appsensor_event(password,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE5")
+    end
+  end
+
+  def no_username(username, request)
+    if username.length == 0
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE9")
+    end
+  end
+
+  def no_password(password, request)
+    if password.length == 0
+      appsensor_event(password,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE8")
+    end
   end
 end

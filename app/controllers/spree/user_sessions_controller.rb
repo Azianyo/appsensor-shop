@@ -16,9 +16,10 @@ class Spree::UserSessionsController < Devise::SessionsController
 
   def create
     authenticate_spree_user!
-    if params["spree_user"]["email"].length > 5
-      appsensor_event(params["spree_user"]["email"],request.remote_ip,request.location.data["latitude"],request.location.data["longitude"],"AE4")
-    end
+    no_username(params["spree_user"]["email"], request)
+    too_many_chars_in_username(params["spree_user"]["email"], request)
+    no_password(params["spree_user"]["password"], request)
+    too_many_chars_in_password(params["spree_user"]["password"], request)
     if spree_user_signed_in?
       respond_to do |format|
         format.html do
