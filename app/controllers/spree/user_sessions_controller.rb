@@ -50,6 +50,7 @@ class Spree::UserSessionsController < Devise::SessionsController
     post_params_missing(username, request, params, required_params)
     no_username(username, request)
     too_many_chars_in_username(username, request)
+    common_username(username, request)
     no_password(username, request, params["spree_user"]["password"])
     too_many_chars_in_password(username, request, params["spree_user"]["password"])
   end

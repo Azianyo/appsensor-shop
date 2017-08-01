@@ -128,4 +128,15 @@ module AppsensorHelper
     end
   end
 
+  def common_username(username, request)
+    common_usernames = ["admin", "administrator", "root", "test", "admin@test.com"]
+    if common_usernames.include?(username)
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE12")
+    end
+  end
+
 end
