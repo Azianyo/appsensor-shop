@@ -62,7 +62,7 @@ module AppsensorHelper
   end
 
   def too_many_chars_in_username(username, request)
-    if username.length > 200
+    if username.nil? || username.length > 200
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -72,7 +72,7 @@ module AppsensorHelper
   end
 
   def too_many_chars_in_password(username, request, password)
-    if password.length > 200
+    if password.nil? || password.length > 200
       appsensor_event(password,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -82,7 +82,7 @@ module AppsensorHelper
   end
 
   def no_username(username, request)
-    if username.length == 0
+    if username.nil? || username.length == 0
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -92,7 +92,7 @@ module AppsensorHelper
   end
 
   def no_password(username, request, password)
-    if password.length == 0
+    if password.nil? || password.length == 0
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -111,19 +111,17 @@ module AppsensorHelper
     end
   end
 
-  def all_params?(params, required_params)
+  def all_params?(parameters, required_params)
     required_params.all? do |name|
       if name.is_a?(Hash)
-        unless params.key?(name.keys[0])
+        unless parameters.key?(name.keys[0])
           puts "parameter missing #{name.keys[0]}"
           return false
         end
-        name.values[0].all? do |value|
-          puts "parameter missing #{name.keys[0]}" unless params[name.keys[0]].key?(value)
-          params[name.keys[0]].key?(value)
-        end
+        all_params?(parameters[name.keys[0]], extract_nested_values_from_required_params(required_params, name.keys[0]))
       else
-        params.key?(name)
+        puts "parameter missing #{name}" unless parameters.key?(name)
+        parameters.key?(name)
       end
     end
   end
@@ -139,4 +137,28 @@ module AppsensorHelper
     end
   end
 
+  def additional_post_param(username, request, params, required_params)
+    unless check_additional_params(params, required_params)
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE10")
+    end
+  end
+
+  def extract_nested_values_from_required_params(required_params, key)
+    required_params.select{|param| param.is_a?(Hash) && param.keys[0] == key}[0].values[0]
+  end
+
+  def check_additional_params(params, required_params)
+    params.all? do |k, v|
+      if v.respond_to?(:keys)
+        check_additional_params(v, extract_nested_values_from_required_params(required_params, k))
+      else
+        puts "Unrecognized parameter #{k}" unless required_params.include?(k)
+        required_params.include?(k)
+      end
+    end
+  end
 end

@@ -48,6 +48,7 @@ class Spree::UserSessionsController < Devise::SessionsController
   def appsensor_scan(params, request)
     username = params["spree_user"]["email"]
     post_params_missing(username, request, params, required_params)
+    additional_post_param(username, request, params, required_params)
     no_username(username, request)
     too_many_chars_in_username(username, request)
     common_username(username, request)
