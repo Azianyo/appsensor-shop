@@ -15,11 +15,8 @@ class Spree::UserSessionsController < Devise::SessionsController
   after_action :set_current_order, only: :create
 
   def create
+    appsensor_scan(params, request)
     authenticate_spree_user!
-    no_username(params["spree_user"]["email"], request)
-    too_many_chars_in_username(params["spree_user"]["email"], request)
-    no_password(params["spree_user"]["password"], request)
-    too_many_chars_in_password(params["spree_user"]["password"], request)
     if spree_user_signed_in?
       respond_to do |format|
         format.html do
@@ -43,6 +40,19 @@ class Spree::UserSessionsController < Devise::SessionsController
   end
 
   protected
+
+  def required_params
+    ["utf8", "authenticity_token", {"spree_user" => ["email", "password", "remember_me"]}, "commit", "controller", "action"]
+  end
+
+  def appsensor_scan(params, request)
+    username = params["spree_user"]["email"]
+    post_params_missing(username, request, params, required_params)
+    no_username(username, request)
+    too_many_chars_in_username(username, request)
+    no_password(username, request, params["spree_user"]["password"])
+    too_many_chars_in_password(username, request, params["spree_user"]["password"])
+  end
 
   def translation_scope
     'devise.user_sessions'

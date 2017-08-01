@@ -71,8 +71,8 @@ module AppsensorHelper
     end
   end
 
-  def too_many_chars_in_password(password, request)
-    if password.length > 5
+  def too_many_chars_in_password(username, request, password)
+    if password.length > 200
       appsensor_event(password,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -91,13 +91,41 @@ module AppsensorHelper
     end
   end
 
-  def no_password(password, request)
+  def no_password(username, request, password)
     if password.length == 0
-      appsensor_event(password,
+      appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
                       request.location.data["longitude"],
                       "AE8")
     end
   end
+
+  def post_params_missing(username, request, params, required_params)
+    unless all_params?(params, required_params)
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE11")
+    end
+  end
+
+  def all_params?(params, required_params)
+    required_params.all? do |name|
+      if name.is_a?(Hash)
+        unless params.key?(name.keys[0])
+          puts "parameter missing #{name.keys[0]}"
+          return false
+        end
+        name.values[0].all? do |value|
+          puts "parameter missing #{name.keys[0]}" unless params[name.keys[0]].key?(value)
+          params[name.keys[0]].key?(value)
+        end
+      else
+        params.key?(name)
+      end
+    end
+  end
+
 end
