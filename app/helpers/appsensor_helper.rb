@@ -15,12 +15,15 @@ module AppsensorHelper
   "AE10" => "Additional POST Variable",
   "AE11" => "Missing POST Variable",
   "AE12" => "Utilization of Common Usernames",
-  "AE13" => "Deviation from Normal GEO Location"
+  "AE13" => "Deviation from Normal GEO Location",
+  "RE1" => "Unexpected HTTP Command",
+  "RE2" => "Attempt to Invoke Unsupported HTTP Method"
   }
 
   APPSENSOR_EVENT_TYPES = {
     "AE" => "Authentication Exception",
-    "IE" => "Input Validation"
+    "IE" => "Input Validation",
+    "RE" => "Request Exception"
   }
   def appsensor_event(username, users_ip, latitude=0, longitude=0, event_label)
     uri = URI.parse('http://localhost:8085/api/v1.0/events')
@@ -159,6 +162,27 @@ module AppsensorHelper
         puts "Unrecognized parameter #{k}" unless required_params.include?(k)
         required_params.include?(k)
       end
+    end
+  end
+
+  def unexpected_http_method(username, request)
+    unless request.post? || request.get? || request.delete?
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "RE1")
+    end
+  end
+
+  def unsupported_http_method(username, request)
+    unless request.post? || request.get? || request.delete? || request.trace? ||
+           request.head? || request.put? || request.options? || request.connect?
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "RE2")
     end
   end
 end
