@@ -64,6 +64,28 @@ module AppsensorHelper
     event_msg
   end
 
+  def use_of_multiple_usernames(username, request, session_id)
+    if AuthenticationAttempt.find_by(session_id: session.id).username != username
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE1")
+    end
+  end
+
+  def high_rate_of_login_attempts(username, request, session_id)
+    if AuthenticationAttempt.where(session_id: session_id)
+                            .where("created_on >= ?", DateTime.now - 2.seconds)
+                            .count > 3
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE3")
+    end
+  end
+
   def too_many_chars_in_username(username, request)
     if username.nil? || username.length > 200
       appsensor_event(username,

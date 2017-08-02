@@ -18,6 +18,7 @@ class Spree::UserSessionsController < Devise::SessionsController
     appsensor_scan(params, request)
     authenticate_spree_user!
     if spree_user_signed_in?
+      create_auth_attempt(true)
       respond_to do |format|
         format.html do
           flash[:success] = Spree.t(:logged_in_succesfully)
@@ -26,6 +27,7 @@ class Spree::UserSessionsController < Devise::SessionsController
         format.js { render success_json }
       end
     else
+      create_auth_attempt(false)
       respond_to do |format|
         format.html do
           flash.now[:error] = t('devise.failure.invalid')
@@ -57,6 +59,14 @@ class Spree::UserSessionsController < Devise::SessionsController
     too_many_chars_in_password(username, request, password)
     unexpected_char_in_username(username, request)
     unexpected_char_in_password(username, request, password)
+  end
+
+  def create_auth_attempt(successful)
+    username = params["spree_user"]["email"]
+    use_of_multiple_usernames(username, request, session.id)
+    AuthenticationAttempt.create(session_id: session.id,
+                                username: username,
+                                is_successful: successful)
 
   end
 
