@@ -47,13 +47,17 @@ class Spree::UserSessionsController < Devise::SessionsController
 
   def appsensor_scan(params, request)
     username = params["spree_user"]["email"]
+    password = params["spree_user"]["password"]
     post_params_missing(username, request, params, required_params)
     additional_post_param(username, request, params, required_params)
     no_username(username, request)
     too_many_chars_in_username(username, request)
     common_username(username, request)
-    no_password(username, request, params["spree_user"]["password"])
-    too_many_chars_in_password(username, request, params["spree_user"]["password"])
+    no_password(username, request, password)
+    too_many_chars_in_password(username, request, password)
+    unexpected_char_in_username(username, request)
+    unexpected_char_in_password(username, request, password)
+
   end
 
   def translation_scope

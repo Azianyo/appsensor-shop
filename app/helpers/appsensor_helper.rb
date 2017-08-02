@@ -84,6 +84,36 @@ module AppsensorHelper
     end
   end
 
+  def unexpected_char_in_username(username, request)
+    if username.split('').map{ |c| c.unpack('C*') }.any?{ |v| v > 126 || v < 32 }
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE6")
+    end
+  end
+
+  def unexpected_char_in_password(username, request, password)
+    if password.split('').map{ |c| c.unpack('C*') }.any?{ |v| v > 126 || v < 32 }
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "AE7")
+    end
+  end
+
+  def no_password(username, request, password)
+    if password.nil? || password.length == 0
+      appsensor_event(username,
+      request.remote_ip,
+      request.location.data["latitude"],
+      request.location.data["longitude"],
+      "AE8")
+    end
+  end
+
   def no_username(username, request)
     if username.nil? || username.length == 0
       appsensor_event(username,
@@ -94,16 +124,31 @@ module AppsensorHelper
     end
   end
 
-  def no_password(username, request, password)
-    if password.nil? || password.length == 0
+  def additional_post_param(username, request, params, required_params)
+    unless check_additional_params(params, required_params)
       appsensor_event(username,
-                      request.remote_ip,
-                      request.location.data["latitude"],
-                      request.location.data["longitude"],
-                      "AE8")
+      request.remote_ip,
+      request.location.data["latitude"],
+      request.location.data["longitude"],
+      "AE10")
     end
   end
 
+  def extract_nested_values_from_required_params(required_params, key)
+    required_params.select{|param| param.is_a?(Hash) && param.keys[0] == key}[0].values[0]
+  end
+
+  def check_additional_params(params, required_params)
+    params.all? do |k, v|
+      if v.respond_to?(:keys)
+        check_additional_params(v, extract_nested_values_from_required_params(required_params, k))
+      else
+        puts "Unrecognized parameter #{k}" unless required_params.include?(k)
+        required_params.include?(k)
+      end
+    end
+  end
+  
   def post_params_missing(username, request, params, required_params)
     unless all_params?(params, required_params)
       appsensor_event(username,
@@ -140,30 +185,6 @@ module AppsensorHelper
     end
   end
 
-  def additional_post_param(username, request, params, required_params)
-    unless check_additional_params(params, required_params)
-      appsensor_event(username,
-                      request.remote_ip,
-                      request.location.data["latitude"],
-                      request.location.data["longitude"],
-                      "AE10")
-    end
-  end
-
-  def extract_nested_values_from_required_params(required_params, key)
-    required_params.select{|param| param.is_a?(Hash) && param.keys[0] == key}[0].values[0]
-  end
-
-  def check_additional_params(params, required_params)
-    params.all? do |k, v|
-      if v.respond_to?(:keys)
-        check_additional_params(v, extract_nested_values_from_required_params(required_params, k))
-      else
-        puts "Unrecognized parameter #{k}" unless required_params.include?(k)
-        required_params.include?(k)
-      end
-    end
-  end
 
   def unexpected_http_method(username, request)
     unless ["POST", "GET", "DELETE"].include? request.request_method
