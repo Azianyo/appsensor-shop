@@ -85,7 +85,7 @@ module AppsensorHelper
   end
 
   def unexpected_char_in_username(username, request)
-    if username.split('').map{ |c| c.unpack('C*') }.any?{ |v| v > 126 || v < 32 }
+    if username.split('').map{ |c| c.unpack('C*') }.flatten.any?{ |v| v > 126 || v < 32 }
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -95,7 +95,7 @@ module AppsensorHelper
   end
 
   def unexpected_char_in_password(username, request, password)
-    if password.split('').map{ |c| c.unpack('C*') }.any?{ |v| v > 126 || v < 32 }
+    if password.split('').map{ |c| c.unpack('C*') }.flatten.any?{ |v| v > 126 || v < 32 }
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -148,7 +148,7 @@ module AppsensorHelper
       end
     end
   end
-  
+
   def post_params_missing(username, request, params, required_params)
     unless all_params?(params, required_params)
       appsensor_event(username,

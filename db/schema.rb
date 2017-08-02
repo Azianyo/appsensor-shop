@@ -11,10 +11,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160906181527) do
+ActiveRecord::Schema.define(version: 20170802163351) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "authentication_attempts", force: :cascade do |t|
+    t.string  "session_id"
+    t.string  "username"
+    t.boolean "is_successful"
+  end
 
   create_table "friendly_id_slugs", force: :cascade do |t|
     t.string   "slug",                      null: false
