@@ -166,7 +166,7 @@ module AppsensorHelper
   end
 
   def unexpected_http_method(username, request)
-    unless request.post? || request.get? || request.delete?
+    unless ["POST", "GET", "DELETE"].include? request.request_method
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -176,8 +176,7 @@ module AppsensorHelper
   end
 
   def unsupported_http_method(username, request)
-    unless request.post? || request.get? || request.delete? || request.trace? ||
-           request.head? || request.put? || request.options? || request.connect?
+    unless ["POST", "GET", "DELETE", "HEAD", "PUT", "OPTIONS", "CONNECT"].include? request.request_method
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
