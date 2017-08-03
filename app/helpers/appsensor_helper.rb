@@ -74,6 +74,19 @@ module AppsensorHelper
     end
   end
 
+  def multiple_failed_passwords(username, request, session_id, successful)
+    if !successful && AuthenticationAttempt.where(session_id: session_id)
+                                           .where(is_successful: false)
+                                           .where("created_at >= ?", DateTime.now - 5.minutes)
+                                           .count > 5
+    appsensor_event(username,
+                    request.remote_ip,
+                    request.location.data["latitude"],
+                    request.location.data["longitude"],
+                    "AE2")
+    end
+  end
+
   def high_rate_of_login_attempts(username, request, session_id)
     if AuthenticationAttempt.where(session_id: session_id)
                             .where("created_at >= ?", DateTime.now - 2.seconds)
