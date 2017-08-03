@@ -15,7 +15,7 @@ class Spree::UserSessionsController < Devise::SessionsController
   after_action :set_current_order, only: :create
 
   def create
-    appsensor_scan(params, request)
+    appsensor_scan(params)
     authenticate_spree_user!
     if spree_user_signed_in?
       create_auth_attempt(true)
@@ -47,25 +47,25 @@ class Spree::UserSessionsController < Devise::SessionsController
     ["utf8", "authenticity_token", {"spree_user" => ["email", "password", "remember_me"]}, "commit", "controller", "action"]
   end
 
-  def appsensor_scan(params, request)
+  def appsensor_scan(params)
     username = params["spree_user"]["email"]
     password = params["spree_user"]["password"]
-    post_params_missing(username, request, params, required_params)
-    additional_post_param(username, request, params, required_params)
-    no_username(username, request)
-    too_many_chars_in_username(username, request)
-    common_username(username, request)
-    no_password(username, request, password)
-    too_many_chars_in_password(username, request, password)
-    unexpected_char_in_username(username, request)
-    unexpected_char_in_password(username, request, password)
+    post_params_missing(username, params, required_params)
+    additional_post_param(username, params, required_params)
+    no_username(username)
+    too_many_chars_in_username(username)
+    common_username(username)
+    no_password(username, password)
+    too_many_chars_in_password(username, password)
+    unexpected_char_in_username(username)
+    unexpected_char_in_password(username, password)
   end
 
   def create_auth_attempt(successful)
     username = params["spree_user"]["email"]
-    use_of_multiple_usernames(username, request, session.id)
-    high_rate_of_login_attempts(username, request, session.id)
-    multiple_failed_passwords(username, request, session.id, successful)
+    use_of_multiple_usernames(username)
+    high_rate_of_login_attempts(username)
+    multiple_failed_passwords(username, successful)
     AuthenticationAttempt.create(session_id: session.id,
                                  username: username,
                                  is_successful: successful,

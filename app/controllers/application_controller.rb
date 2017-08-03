@@ -8,8 +8,8 @@ class ApplicationController < ActionController::Base
 
   def check_for_appsensor_events
     user = try(:current_user) || try(:current_admin) || request.remote_ip
-    unexpected_http_method(user, request)
-    unsupported_http_method(user, request)
-    user_agent_change(user, request, session.id)
+    unexpected_http_method(user)
+    unsupported_http_method(user)
+    user_agent_change(user)
   end
 end

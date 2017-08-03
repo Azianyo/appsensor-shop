@@ -66,7 +66,7 @@ module AppsensorHelper
     event_msg
   end
 
-  def use_of_multiple_usernames(username, request, session_id)
+  def use_of_multiple_usernames(username)
     if AuthenticationAttempt.where(session_id: session.id).try(:last).try(:username) != username
       appsensor_event(username,
                       request.remote_ip,
@@ -76,8 +76,8 @@ module AppsensorHelper
     end
   end
 
-  def multiple_failed_passwords(username, request, session_id, successful)
-    if !successful && AuthenticationAttempt.where(session_id: session_id)
+  def multiple_failed_passwords(username, successful)
+    if !successful && AuthenticationAttempt.where(session_id: session.id)
                                            .where(is_successful: false)
                                            .where("created_at >= ?", DateTime.now - 5.minutes)
                                            .count > 5
@@ -89,8 +89,8 @@ module AppsensorHelper
     end
   end
 
-  def high_rate_of_login_attempts(username, request, session_id)
-    if AuthenticationAttempt.where(session_id: session_id)
+  def high_rate_of_login_attempts(username)
+    if AuthenticationAttempt.where(session_id: session.id)
                             .where("created_at >= ?", DateTime.now - 2.seconds)
                             .count > 3
       appsensor_event(username,
@@ -101,7 +101,7 @@ module AppsensorHelper
     end
   end
 
-  def too_many_chars_in_username(username, request)
+  def too_many_chars_in_username(username)
     if username.nil? || username.length > 200
       appsensor_event(username,
                       request.remote_ip,
@@ -111,7 +111,7 @@ module AppsensorHelper
     end
   end
 
-  def too_many_chars_in_password(username, request, password)
+  def too_many_chars_in_password(username, password)
     if password.nil? || password.length > 200
       appsensor_event(password,
                       request.remote_ip,
@@ -121,7 +121,7 @@ module AppsensorHelper
     end
   end
 
-  def unexpected_char_in_username(username, request)
+  def unexpected_char_in_username(username)
     if username.split('').map{ |c| c.unpack('C*') }.flatten.any?{ |v| v > 126 || v < 32 }
       appsensor_event(username,
                       request.remote_ip,
@@ -131,7 +131,7 @@ module AppsensorHelper
     end
   end
 
-  def unexpected_char_in_password(username, request, password)
+  def unexpected_char_in_password(username, password)
     if password.split('').map{ |c| c.unpack('C*') }.flatten.any?{ |v| v > 126 || v < 32 }
       appsensor_event(username,
                       request.remote_ip,
@@ -141,7 +141,7 @@ module AppsensorHelper
     end
   end
 
-  def no_password(username, request, password)
+  def no_password(username, password)
     if password.nil? || password.length == 0
       appsensor_event(username,
       request.remote_ip,
@@ -151,7 +151,7 @@ module AppsensorHelper
     end
   end
 
-  def no_username(username, request)
+  def no_username(username)
     if username.nil? || username.length == 0
       appsensor_event(username,
                       request.remote_ip,
@@ -161,7 +161,7 @@ module AppsensorHelper
     end
   end
 
-  def additional_post_param(username, request, params, required_params)
+  def additional_post_param(username, params, required_params)
     unless check_additional_params(params, required_params)
       appsensor_event(username,
       request.remote_ip,
@@ -186,7 +186,7 @@ module AppsensorHelper
     end
   end
 
-  def post_params_missing(username, request, params, required_params)
+  def post_params_missing(username, params, required_params)
     unless all_params?(params, required_params)
       appsensor_event(username,
                       request.remote_ip,
@@ -211,7 +211,7 @@ module AppsensorHelper
     end
   end
 
-  def common_username(username, request)
+  def common_username(username)
     common_usernames = ["admin", "administrator", "root", "test", "admin@test.com"]
     if common_usernames.include?(username)
       appsensor_event(username,
@@ -223,7 +223,7 @@ module AppsensorHelper
   end
 
 
-  def unexpected_http_method(username, request)
+  def unexpected_http_method(username)
     unless ["POST", "GET", "DELETE"].include? request.request_method
       appsensor_event(username,
                       request.remote_ip,
@@ -233,7 +233,7 @@ module AppsensorHelper
     end
   end
 
-  def unsupported_http_method(username, request)
+  def unsupported_http_method(username)
     unless ["POST", "GET", "DELETE", "HEAD", "PUT", "OPTIONS", "CONNECT"].include? request.request_method
       appsensor_event(username,
                       request.remote_ip,
@@ -243,8 +243,8 @@ module AppsensorHelper
     end
   end
 
-  def user_agent_change(username, request, session_id)
-    if session_id &&
+  def user_agent_change(username)
+    if session.id &&
       AuthenticationAttempt.where(session_id: session.id).try(:last).try(:user_agent) != request.headers["HTTP_USER_AGENT"]
       appsensor_event(username,
                       request.remote_ip,
