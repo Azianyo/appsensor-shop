@@ -67,8 +67,9 @@ class Spree::UserSessionsController < Devise::SessionsController
     high_rate_of_login_attempts(username, request, session.id)
     multiple_failed_passwords(username, request, session.id, successful)
     AuthenticationAttempt.create(session_id: session.id,
-                                username: username,
-                                is_successful: successful)
+                                 username: username,
+                                 is_successful: successful,
+                                 user_agent: request.headers["HTTP_USER_AGENT"])
 
   end
 

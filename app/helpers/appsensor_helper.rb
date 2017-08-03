@@ -17,13 +17,15 @@ module AppsensorHelper
   "AE12" => "Utilization of Common Usernames",
   "AE13" => "Deviation from Normal GEO Location",
   "RE1" => "Unexpected HTTP Command",
-  "RE2" => "Attempt to Invoke Unsupported HTTP Method"
+  "RE2" => "Attempt to Invoke Unsupported HTTP Method",
+  "SE6" => "Change of User Agent Mid Session"
   }
 
   APPSENSOR_EVENT_TYPES = {
     "AE" => "Authentication Exception",
     "IE" => "Input Validation",
-    "RE" => "Request Exception"
+    "RE" => "Request Exception",
+    "SE" => "Session Exception"
   }
   def appsensor_event(username, users_ip, latitude=0, longitude=0, event_label)
     uri = URI.parse('http://localhost:8085/api/v1.0/events')
@@ -238,6 +240,17 @@ module AppsensorHelper
                       request.location.data["latitude"],
                       request.location.data["longitude"],
                       "RE2")
+    end
+  end
+
+  def user_agent_change(username, request, session_id)
+    if session_id &&
+      AuthenticationAttempt.where(session_id: session.id).try(:last).try(:user_agent) != request.headers["HTTP_USER_AGENT"]
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "SE6")
     end
   end
 end
