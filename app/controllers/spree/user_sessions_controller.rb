@@ -69,7 +69,8 @@ class Spree::UserSessionsController < Devise::SessionsController
     AuthenticationAttempt.create(session_id: session.id,
                                  username: username,
                                  is_successful: successful,
-                                 user_agent: request.headers["HTTP_USER_AGENT"])
+                                 user_agent: request.headers["HTTP_USER_AGENT"],
+                                 ip_address: request.remote_ip)
 
   end
 

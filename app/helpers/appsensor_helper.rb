@@ -18,6 +18,7 @@ module AppsensorHelper
   "AE13" => "Deviation from Normal GEO Location",
   "RE1" => "Unexpected HTTP Command",
   "RE2" => "Attempt to Invoke Unsupported HTTP Method",
+  "SE5" => "Source Location Changes During Session",
   "SE6" => "Change of User Agent Mid Session"
   }
 
@@ -243,6 +244,17 @@ module AppsensorHelper
     end
   end
 
+  def source_location_change(username)
+    if session.id &&
+      AuthenticationAttempt.where(session_id: session.id).try(:last).try(:ip_address) != request.remote_ip
+        appsensor_event(username,
+                        request.remote_ip,
+                        request.location.data["latitude"],
+                        request.location.data["longitude"],
+                        "SE5")
+    end
+  end
+
   def user_agent_change(username)
     if session.id &&
       AuthenticationAttempt.where(session_id: session.id).try(:last).try(:user_agent) != request.headers["HTTP_USER_AGENT"]
@@ -253,4 +265,5 @@ module AppsensorHelper
                       "SE6")
     end
   end
+
 end

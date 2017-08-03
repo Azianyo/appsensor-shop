@@ -11,5 +11,6 @@ class ApplicationController < ActionController::Base
     unexpected_http_method(user)
     unsupported_http_method(user)
     user_agent_change(user)
+    source_location_change(user)
   end
 end
