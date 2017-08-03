@@ -11,5 +11,4 @@ class ApplicationController < ActionController::Base
     unexpected_http_method(user, request)
     unsupported_http_method(user, request)
   end
-
 end

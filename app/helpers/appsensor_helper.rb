@@ -65,7 +65,7 @@ module AppsensorHelper
   end
 
   def use_of_multiple_usernames(username, request, session_id)
-    if AuthenticationAttempt.find_by(session_id: session.id).username != username
+    if AuthenticationAttempt.where(session_id: session.id).try(:last).try(:username) != username
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -76,7 +76,7 @@ module AppsensorHelper
 
   def high_rate_of_login_attempts(username, request, session_id)
     if AuthenticationAttempt.where(session_id: session_id)
-                            .where("created_on >= ?", DateTime.now - 2.seconds)
+                            .where("created_at >= ?", DateTime.now - 2.seconds)
                             .count > 3
       appsensor_event(username,
                       request.remote_ip,

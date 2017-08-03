@@ -64,6 +64,7 @@ class Spree::UserSessionsController < Devise::SessionsController
   def create_auth_attempt(successful)
     username = params["spree_user"]["email"]
     use_of_multiple_usernames(username, request, session.id)
+    high_rate_of_login_attempts(username, request, session.id)
     AuthenticationAttempt.create(session_id: session.id,
                                 username: username,
                                 is_successful: successful)
