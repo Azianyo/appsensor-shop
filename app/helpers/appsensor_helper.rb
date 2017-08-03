@@ -19,14 +19,17 @@ module AppsensorHelper
   "RE1" => "Unexpected HTTP Command",
   "RE2" => "Attempt to Invoke Unsupported HTTP Method",
   "SE5" => "Source Location Changes During Session",
-  "SE6" => "Change of User Agent Mid Session"
+  "SE6" => "Change of User Agent Mid Session",
+  "STE1" => "High Number of Logouts Across The Site",
+  "STE2" => "High Number of Logins Across The Site"
   }
 
   APPSENSOR_EVENT_TYPES = {
     "AE" => "Authentication Exception",
     "IE" => "Input Validation",
     "RE" => "Request Exception",
-    "SE" => "Session Exception"
+    "SE" => "Session Exception",
+    "ST" => "SystemTrend Exception"
   }
   def appsensor_event(username, users_ip, latitude=0, longitude=0, event_label)
     uri = URI.parse('http://localhost:8085/api/v1.0/events')
@@ -266,4 +269,13 @@ module AppsensorHelper
     end
   end
 
+  def high_number_of_logins
+    if AuthenticationAttempt.where("created_at >= ?", DateTime.now - 1.hour).count > 100
+      appsensor_event(nil,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "STE2")
+    end
+  end
 end

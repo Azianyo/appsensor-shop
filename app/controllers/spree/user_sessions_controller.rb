@@ -66,6 +66,7 @@ class Spree::UserSessionsController < Devise::SessionsController
     use_of_multiple_usernames(username)
     high_rate_of_login_attempts(username)
     multiple_failed_passwords(username, successful)
+    high_number_of_logins
     AuthenticationAttempt.create(session_id: session.id,
                                  username: username,
                                  is_successful: successful,
