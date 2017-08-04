@@ -20,6 +20,7 @@ module AppsensorHelper
   "RE2" => "Attempt to Invoke Unsupported HTTP Method",
   "SE5" => "Source Location Changes During Session",
   "SE6" => "Change of User Agent Mid Session",
+  "ACE3" => "Force Browsing Attempt",
   "STE1" => "High Number of Logouts Across The Site",
   "STE2" => "High Number of Logins Across The Site"
   }
@@ -29,6 +30,7 @@ module AppsensorHelper
     "IE" => "Input Validation",
     "RE" => "Request Exception",
     "SE" => "Session Exception",
+    "AC" => "AccessControl Exception",
     "ST" => "SystemTrend Exception"
   }
   def appsensor_event(username, users_ip, latitude=0, longitude=0, event_label)
@@ -249,7 +251,7 @@ module AppsensorHelper
 
   def source_location_change(username)
     if session.id &&
-      AuthenticationAttempt.where(session_id: session.id).try(:last).try(:ip_address) != request.remote_ip
+       AuthenticationAttempt.where(session_id: session.id).try(:last).try(:ip_address) != request.remote_ip
         appsensor_event(username,
                         request.remote_ip,
                         request.location.data["latitude"],
@@ -267,6 +269,14 @@ module AppsensorHelper
                       request.location.data["longitude"],
                       "SE6")
     end
+  end
+
+  def force_browsing_attempt(username)
+    appsensor_event(username,
+                    request.remote_ip,
+                    request.location.data["latitude"],
+                    request.location.data["longitude"],
+                    "ACE3")
   end
 
   def high_number_of_logins
