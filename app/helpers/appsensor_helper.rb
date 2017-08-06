@@ -18,6 +18,7 @@ module AppsensorHelper
   "AE13" => "Deviation from Normal GEO Location",
   "RE1" => "Unexpected HTTP Command",
   "RE2" => "Attempt to Invoke Unsupported HTTP Method",
+  "RE5" => "Additional/Duplicated Data in Request",
   "SE5" => "Source Location Changes During Session",
   "SE6" => "Change of User Agent Mid Session",
   "ACE3" => "Force Browsing Attempt",
@@ -246,6 +247,23 @@ module AppsensorHelper
                       request.location.data["latitude"],
                       request.location.data["longitude"],
                       "RE2")
+    end
+  end
+
+  def additional_data_in_request(username, params)
+    if request.post?
+      uri = URI.parse(request.original_url)
+      url_params = CGI.parse(uri.query)
+      url_param_for_post = url_params.keys.any?{ |p| params.include?(p)}
+    end
+    http_headers = request.headers.env.keys
+    duplicated_header = http_headers.count != http_headers.uniq.count
+    if !params.permitted? || duplicated_header || url_param_for_post
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "RE5")
     end
   end
 

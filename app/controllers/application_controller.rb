@@ -17,6 +17,7 @@ class ApplicationController < ActionController::Base
     unsupported_http_method(user)
     user_agent_change(user)
     source_location_change(user)
+    additional_data_in_request(user, params)
   end
 
   def weird_http_methods
