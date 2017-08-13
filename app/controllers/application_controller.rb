@@ -19,6 +19,7 @@ class ApplicationController < ActionController::Base
     source_location_change(user)
     data_missing_from_request(user)
     additional_data_in_request(user)
+    unexpected_length_of_param(user)
     unexpected_type_of_chars_in_param(user)
   end
 

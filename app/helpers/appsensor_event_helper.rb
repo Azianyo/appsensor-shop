@@ -20,6 +20,7 @@ module AppsensorEventHelper
   "AE13" => "Deviation from Normal GEO Location",
   "RE1" => "Unexpected HTTP Command",
   "RE2" => "Attempt to Invoke Unsupported HTTP Method",
+  "RE6" => "Data Missing from Request",
   "RE5" => "Additional/Duplicated Data in Request",
   "RE7" => "Unexpected Quantity of Characters in Parameter",
   "RE8" => "Unexpected Type of Characters in Parameter",
@@ -249,6 +250,16 @@ module AppsensorEventHelper
                       request.location.data["latitude"],
                       request.location.data["longitude"],
                       "RE6")
+    end
+  end
+
+  def unexpected_length_of_param(username)
+    if params_too_long?(params)
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "RE7")
     end
   end
 

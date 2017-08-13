@@ -18,14 +18,29 @@ module AppsensorAdditionalHelper
     end
   end
 
+  def params_too_long?(params)
+    params.any? do |k,v|
+      if v.respond_to?(:keys)
+        params_too_long?(v)
+      else
+        v.length > 200
+      end
+    end
+  end
+
   def params_contain_unexpected_chars?(params)
     params.any? do |k,v|
+      next if k == "utf8"
       if v.respond_to?(:keys)
         params_contain_unexpected_chars?(v)
       else
         contains_unexpected_chars?(v)
       end
     end
+  end
+
+  def contains_unexpected_chars?(phrase)
+    phrase.split('').map{ |c| c.unpack('C*') }.flatten.any?{ |v| v > 126 || v < 32 }
   end
 
   def headers_contain_line_break?
@@ -47,7 +62,4 @@ module AppsensorAdditionalHelper
     end
   end
 
-  def contains_unexpected_chars?(phrase)
-    phrase.split('').map{ |c| c.unpack('C*') }.flatten.any?{ |v| v > 126 || v < 32 }
-  end
 end
