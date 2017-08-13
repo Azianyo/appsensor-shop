@@ -24,6 +24,9 @@ module AppsensorEventHelper
   "RE5" => "Additional/Duplicated Data in Request",
   "RE7" => "Unexpected Quantity of Characters in Parameter",
   "RE8" => "Unexpected Type of Characters in Parameter",
+  "SE1" => "Modifying Existing Cookie",
+  "SE2" => "Adding New Cookie",
+  "SE3" => "Deleting Existing Cookie",
   "SE5" => "Source Location Changes During Session",
   "SE6" => "Change of User Agent Mid Session",
   "ACE3" => "Force Browsing Attempt",
@@ -273,6 +276,38 @@ module AppsensorEventHelper
                       request.location.data["latitude"],
                       request.location.data["longitude"],
                       "RE8")
+    end
+  end
+
+  # def modifying_existing_cookie(username)
+  #   ["__utma", "guest_token","JSESSIONID", "_solidus_demo_session"]
+  #   request.headers.env["HTTP_COOKIE"]
+  #   appsensor_event(username,
+  #                   request.remote_ip,
+  #                   request.location.data["latitude"],
+  #                   request.location.data["longitude"],
+  #                   "SE1")
+  # end
+
+  def adding_new_cookie(username)
+    standard_cookies = ["__utma", "guest_token","JSESSIONID", "_solidus_demo_session"]
+    unless (request.cookies.keys - standard_cookies).empty?
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "SE2")
+    end
+  end
+
+  def deleting_existing_cookie(username)
+    standard_cookies = ["__utma", "guest_token","JSESSIONID", "_solidus_demo_session"]
+    unless (standard_cookies - request.cookies.keys).empty?
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "SE3")
     end
   end
 
