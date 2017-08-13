@@ -1,6 +1,6 @@
 class ApplicationController < ActionController::Base
   include ApplicationHelper
-  include AppsensorHelper
+  include AppsensorEventHelper
   # Prevent CSRF attacks by raising an exception.
   # For APIs, you may want to use :null_session instead.
   protect_from_forgery with: :exception
@@ -17,7 +17,9 @@ class ApplicationController < ActionController::Base
     unsupported_http_method(user)
     user_agent_change(user)
     source_location_change(user)
-    additional_data_in_request(user, params)
+    data_missing_from_request(user)
+    additional_data_in_request(user)
+    unexpected_type_of_chars_in_param(user)
   end
 
   def weird_http_methods

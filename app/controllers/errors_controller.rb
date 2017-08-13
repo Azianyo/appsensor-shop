@@ -1,5 +1,5 @@
 class ErrorsController < ApplicationController
-  include AppsensorHelper
+  include AppsensorEventHelper
 
   def page_not_found
     user = get_current_user

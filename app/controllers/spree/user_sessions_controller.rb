@@ -8,7 +8,7 @@ class Spree::UserSessionsController < Devise::SessionsController
   include Spree::Core::ControllerHelpers::Common
   include Spree::Core::ControllerHelpers::Order
   include Spree::Core::ControllerHelpers::Store
-  include AppsensorHelper
+  include AppsensorEventHelper
 
   # This is included in ControllerHelpers::Order.  We just want to call
   # it after someone has successfully logged in.
@@ -50,8 +50,8 @@ class Spree::UserSessionsController < Devise::SessionsController
   def appsensor_scan(params)
     username = params["spree_user"]["email"]
     password = params["spree_user"]["password"]
-    post_params_missing(username, params, required_params)
-    additional_post_param(username, params, required_params)
+    post_params_missing(username, required_params)
+    additional_post_param(username, required_params)
     no_username(username)
     too_many_chars_in_username(username)
     common_username(username)

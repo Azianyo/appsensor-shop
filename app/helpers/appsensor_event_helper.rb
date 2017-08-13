@@ -1,7 +1,9 @@
 require 'net/http'
 require 'time'
 
-module AppsensorHelper
+module AppsensorEventHelper
+  include AppsensorAdditionalHelper
+
   APPSENSOR_EVENT_MESSAGES = {
   "AE1" => "Use of Multiple Usernames",
   "AE2" => "Multiple Failed Passwords",
@@ -19,6 +21,8 @@ module AppsensorHelper
   "RE1" => "Unexpected HTTP Command",
   "RE2" => "Attempt to Invoke Unsupported HTTP Method",
   "RE5" => "Additional/Duplicated Data in Request",
+  "RE7" => "Unexpected Quantity of Characters in Parameter",
+  "RE8" => "Unexpected Type of Characters in Parameter",
   "SE5" => "Source Location Changes During Session",
   "SE6" => "Change of User Agent Mid Session",
   "ACE3" => "Force Browsing Attempt",
@@ -129,7 +133,7 @@ module AppsensorHelper
   end
 
   def unexpected_char_in_username(username)
-    if username.split('').map{ |c| c.unpack('C*') }.flatten.any?{ |v| v > 126 || v < 32 }
+    if contains_unexpected_chars?(username)
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -139,7 +143,7 @@ module AppsensorHelper
   end
 
   def unexpected_char_in_password(username, password)
-    if password.split('').map{ |c| c.unpack('C*') }.flatten.any?{ |v| v > 126 || v < 32 }
+    if contains_unexpected_chars?(password)
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -168,7 +172,7 @@ module AppsensorHelper
     end
   end
 
-  def additional_post_param(username, params, required_params)
+  def additional_post_param(username, required_params)
     unless check_additional_params(params, required_params)
       appsensor_event(username,
       request.remote_ip,
@@ -178,43 +182,13 @@ module AppsensorHelper
     end
   end
 
-  def extract_nested_values_from_required_params(required_params, key)
-    required_params.select{|param| param.is_a?(Hash) && param.keys[0] == key}[0].values[0]
-  end
-
-  def check_additional_params(params, required_params)
-    params.all? do |k, v|
-      if v.respond_to?(:keys)
-        check_additional_params(v, extract_nested_values_from_required_params(required_params, k))
-      else
-        puts "Unrecognized parameter #{k}" unless required_params.include?(k)
-        required_params.include?(k)
-      end
-    end
-  end
-
-  def post_params_missing(username, params, required_params)
+  def post_params_missing(username, required_params)
     unless all_params?(params, required_params)
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
                       request.location.data["longitude"],
                       "AE11")
-    end
-  end
-
-  def all_params?(parameters, required_params)
-    required_params.all? do |name|
-      if name.is_a?(Hash)
-        unless parameters.key?(name.keys[0])
-          puts "parameter missing #{name.keys[0]}"
-          return false
-        end
-        all_params?(parameters[name.keys[0]], extract_nested_values_from_required_params(required_params, name.keys[0]))
-      else
-        puts "parameter missing #{name}" unless parameters.key?(name)
-        parameters.key?(name)
-      end
     end
   end
 
@@ -250,20 +224,41 @@ module AppsensorHelper
     end
   end
 
-  def additional_data_in_request(username, params)
+  def additional_data_in_request(username)
     if request.post?
       uri = URI.parse(request.original_url)
-      url_params = CGI.parse(uri.query)
-      url_param_for_post = url_params.keys.any?{ |p| params.include?(p)}
+      url_params = CGI.parse(uri.query) if uri.query
+      url_param_for_post = url_params.keys.any?{ |p| params.include?(p)} if url_params
     end
     http_headers = request.headers.env.keys
     duplicated_header = http_headers.count != http_headers.uniq.count
-    if !params.permitted? || duplicated_header || url_param_for_post
+    # data_params = params.except("action", "controller")
+    if duplicated_header || url_param_for_post #|| !data_params.empty? || !data_params.permitted?
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
                       request.location.data["longitude"],
                       "RE5")
+    end
+  end
+
+  def data_missing_from_request(username)
+    if params.empty?
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "RE6")
+    end
+  end
+
+  def unexpected_type_of_chars_in_param(username)
+    if params_contain_unexpected_chars?(params)
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "RE8")
     end
   end
 
