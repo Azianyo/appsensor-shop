@@ -62,4 +62,13 @@ module AppsensorAdditionalHelper
     end
   end
 
+  def valid_encoding_in_params?(params)
+    params.all? do |k,v|
+      if v.respond_to?(:keys)
+        valid_encoding_in_params?(v)
+      else
+        v.valid_encoding?
+      end
+    end
+  end
 end

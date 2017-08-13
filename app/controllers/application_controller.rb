@@ -21,6 +21,7 @@ class ApplicationController < ActionController::Base
     additional_data_in_request(user)
     unexpected_length_of_param(user)
     unexpected_type_of_chars_in_param(user)
+    unexpected_encoding_used(user)
   end
 
   def weird_http_methods

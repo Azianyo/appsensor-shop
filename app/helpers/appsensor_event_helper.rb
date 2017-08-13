@@ -27,6 +27,7 @@ module AppsensorEventHelper
   "SE5" => "Source Location Changes During Session",
   "SE6" => "Change of User Agent Mid Session",
   "ACE3" => "Force Browsing Attempt",
+  "EE2" => "Unexpected Encoding Used",
   "STE1" => "High Number of Logouts Across The Site",
   "STE2" => "High Number of Logins Across The Site"
   }
@@ -301,6 +302,16 @@ module AppsensorEventHelper
                     request.location.data["latitude"],
                     request.location.data["longitude"],
                     "ACE3")
+  end
+
+  def unexpected_encoding_used(username)
+    unless valid_encoding_in_params?(params)
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "EE2")
+    end
   end
 
   def high_number_of_logins
