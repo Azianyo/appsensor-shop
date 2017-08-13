@@ -28,6 +28,10 @@ module AppsensorAdditionalHelper
     end
   end
 
+  def headers_contain_line_break?
+    request.headers.env.values.join.include?("\n")
+  end
+
   def all_params?(parameters, required_params)
     required_params.all? do |name|
       if name.is_a?(Hash)

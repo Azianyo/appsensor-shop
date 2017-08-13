@@ -253,7 +253,7 @@ module AppsensorEventHelper
   end
 
   def unexpected_type_of_chars_in_param(username)
-    if params_contain_unexpected_chars?(params)
+    if params_contain_unexpected_chars?(params) || headers_contain_line_break?
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
