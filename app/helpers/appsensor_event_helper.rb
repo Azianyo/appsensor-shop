@@ -27,6 +27,7 @@ module AppsensorEventHelper
   "SE5" => "Source Location Changes During Session",
   "SE6" => "Change of User Agent Mid Session",
   "ACE3" => "Force Browsing Attempt",
+  "IE1" => "Cross Site Scripting Attempt",
   "EE2" => "Unexpected Encoding Used",
   "CIE1" => "Blacklist Inspection for Common SQL Injection Values",
   "STE1" => "High Number of Logouts Across The Site",
@@ -303,6 +304,16 @@ module AppsensorEventHelper
                     request.location.data["latitude"],
                     request.location.data["longitude"],
                     "ACE3")
+  end
+
+  def xss_attempt(username)
+    if xss_attempt?(params)
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "IE1")
+    end
   end
 
   def unexpected_encoding_used(username)

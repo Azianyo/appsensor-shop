@@ -81,4 +81,14 @@ module AppsensorAdditionalHelper
       end
     end
   end
+
+  def xss_attempt?(params)
+    params.any? do |k,v|
+      if v.respond_to?(:keys)
+        xss_attempt?(v)
+      else
+        ActionController::Base.helpers.strip_tags(v) != v
+      end
+    end
+  end
 end
