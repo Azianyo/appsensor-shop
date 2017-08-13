@@ -71,4 +71,14 @@ module AppsensorAdditionalHelper
       end
     end
   end
+
+  def sql_injection_attempt?(params)
+    params.any? do |k,v|
+      if v.respond_to?(:keys)
+        sql_injection_attempt?(v)
+      else
+        !v.scan(/('(''|[^'])*')|(;)|(\b(ALTER|CREATE|DELETE|DROP|EXEC(UTE){0,1}|INSERT( +INTO){0,1}|MERGE|SELECT|UPDATE|UNION( +ALL){0,1})\b)/).empty?
+      end
+    end
+  end
 end

@@ -28,6 +28,7 @@ module AppsensorEventHelper
   "SE6" => "Change of User Agent Mid Session",
   "ACE3" => "Force Browsing Attempt",
   "EE2" => "Unexpected Encoding Used",
+  "CIE1" => "Blacklist Inspection for Common SQL Injection Values",
   "STE1" => "High Number of Logouts Across The Site",
   "STE2" => "High Number of Logins Across The Site"
   }
@@ -311,6 +312,16 @@ module AppsensorEventHelper
                       request.location.data["latitude"],
                       request.location.data["longitude"],
                       "EE2")
+    end
+  end
+
+  def sql_injection_blacklist_inspection(username)
+    if sql_injection_attempt?(params)
+      appsensor_event(username,
+                      request.remote_ip,
+                      request.location.data["latitude"],
+                      request.location.data["longitude"],
+                      "CIE1")
     end
   end
 

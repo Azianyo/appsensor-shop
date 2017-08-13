@@ -22,6 +22,7 @@ class ApplicationController < ActionController::Base
     unexpected_length_of_param(user)
     unexpected_type_of_chars_in_param(user)
     unexpected_encoding_used(user)
+    sql_injection_blacklist_inspection(user)
   end
 
   def weird_http_methods
