@@ -293,13 +293,15 @@ module AppsensorEventHelper
   end
 
   def adding_new_cookie(username)
-    standard_cookies = ["__utma", "guest_token","JSESSIONID", "_solidus_demo_session"]
-    unless (request.cookies.keys - standard_cookies).empty?
-      appsensor_event(username,
-                      request.remote_ip,
-                      request.location.data["latitude"],
-                      request.location.data["longitude"],
-                      "SE2")
+    # standard_cookies = ["__utma", "guest_token","JSESSIONID", "_solidus_demo_session"]
+    response.cookies.keys.each do |cookie|
+      unless request.cookies.keys.include?(cookie)
+        appsensor_event(username,
+                        request.remote_ip,
+                        request.location.data["latitude"],
+                        request.location.data["longitude"],
+                        "SE2")
+      end
     end
   end
 
