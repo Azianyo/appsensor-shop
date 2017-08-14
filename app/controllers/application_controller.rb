@@ -15,9 +15,10 @@ class ApplicationController < ActionController::Base
     user = get_current_user
     unexpected_http_method(user)
     unsupported_http_method(user)
-    # modifying_existing_cookie(user)
+    modifying_existing_cookie(user)
     adding_new_cookie(user)
     deleting_existing_cookie(user)
+    substited_another_users_session(user)
     source_location_change(user)
     user_agent_change(user)
     data_missing_from_request(user)

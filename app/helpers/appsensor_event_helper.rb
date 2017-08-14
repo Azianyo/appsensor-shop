@@ -27,6 +27,7 @@ module AppsensorEventHelper
   "SE1" => "Modifying Existing Cookie",
   "SE2" => "Adding New Cookie",
   "SE3" => "Deleting Existing Cookie",
+  "SE4" => "Substituting Another User's Valid Session ID or Cookie",
   "SE5" => "Source Location Changes During Session",
   "SE6" => "Change of User Agent Mid Session",
   "ACE3" => "Force Browsing Attempt",
@@ -310,6 +311,16 @@ module AppsensorEventHelper
                       request.location.data["latitude"],
                       request.location.data["longitude"],
                       "SE3")
+    end
+  end
+
+  def substited_another_users_session(username)
+    if response.cookies.keys.include?("_solidus_demo_session")
+      appsensor_event(username,
+      request.remote_ip,
+      request.location.data["latitude"],
+      request.location.data["longitude"],
+      "SE4")
     end
   end
 
