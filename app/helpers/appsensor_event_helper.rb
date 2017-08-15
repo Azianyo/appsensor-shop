@@ -5,6 +5,12 @@ module AppsensorEventHelper
   include AppsensorAdditionalHelper
 
   APPSENSOR_EVENT_MESSAGES = {
+  "RE1" => "Unexpected HTTP Command",
+  "RE2" => "Attempt to Invoke Unsupported HTTP Method",
+  "RE6" => "Data Missing from Request",
+  "RE5" => "Additional/Duplicated Data in Request",
+  "RE7" => "Unexpected Quantity of Characters in Parameter",
+  "RE8" => "Unexpected Type of Characters in Parameter",
   "AE1" => "Use of Multiple Usernames",
   "AE2" => "Multiple Failed Passwords",
   "AE3" => "High Rate of Login Attempts",
@@ -18,12 +24,6 @@ module AppsensorEventHelper
   "AE11" => "Missing POST Variable",
   "AE12" => "Utilization of Common Usernames",
   "AE13" => "Deviation from Normal GEO Location",
-  "RE1" => "Unexpected HTTP Command",
-  "RE2" => "Attempt to Invoke Unsupported HTTP Method",
-  "RE6" => "Data Missing from Request",
-  "RE5" => "Additional/Duplicated Data in Request",
-  "RE7" => "Unexpected Quantity of Characters in Parameter",
-  "RE8" => "Unexpected Type of Characters in Parameter",
   "SE1" => "Modifying Existing Cookie",
   "SE2" => "Adding New Cookie",
   "SE3" => "Deleting Existing Cookie",
@@ -83,6 +83,74 @@ module AppsensorEventHelper
     event_msg = APPSENSOR_EVENT_MESSAGES[event_label]
     return "Unknown Event" unless event_msg
     event_msg
+  end
+
+  def unexpected_http_method(username)
+    unless ["POST", "GET", "DELETE"].include? request.request_method
+      appsensor_event(username,
+      request.remote_ip,
+      request.location.data["latitude"],
+      request.location.data["longitude"],
+      "RE1")
+    end
+  end
+
+  def unsupported_http_method(username)
+    unless ["POST", "GET", "DELETE", "HEAD", "PUT", "OPTIONS", "CONNECT"].include? request.request_method
+      appsensor_event(username,
+      request.remote_ip,
+      request.location.data["latitude"],
+      request.location.data["longitude"],
+      "RE2")
+    end
+  end
+
+  def additional_data_in_request(username)
+    if request.post?
+      uri = URI.parse(request.original_url)
+      url_params = CGI.parse(uri.query) if uri.query
+      url_param_for_post = url_params.keys.any?{ |p| params.include?(p)} if url_params
+    end
+    http_headers = request.headers.env.keys
+    duplicated_header = http_headers.count != http_headers.uniq.count
+    # data_params = params.except("action", "controller")
+    if duplicated_header || url_param_for_post #|| !data_params.empty? || !data_params.permitted?
+      appsensor_event(username,
+      request.remote_ip,
+      request.location.data["latitude"],
+      request.location.data["longitude"],
+      "RE5")
+    end
+  end
+
+  def data_missing_from_request(username)
+    if params.empty?
+      appsensor_event(username,
+      request.remote_ip,
+      request.location.data["latitude"],
+      request.location.data["longitude"],
+      "RE6")
+    end
+  end
+
+  def unexpected_length_of_param(username)
+    if params_too_long?(params)
+      appsensor_event(username,
+      request.remote_ip,
+      request.location.data["latitude"],
+      request.location.data["longitude"],
+      "RE7")
+    end
+  end
+
+  def unexpected_type_of_chars_in_param(username)
+    if params_contain_unexpected_chars?(params) || headers_contain_line_break?
+      appsensor_event(username,
+      request.remote_ip,
+      request.location.data["latitude"],
+      request.location.data["longitude"],
+      "RE8")
+    end
   end
 
   def use_of_multiple_usernames(username)
@@ -212,74 +280,6 @@ module AppsensorEventHelper
   end
 
 
-  def unexpected_http_method(username)
-    unless ["POST", "GET", "DELETE"].include? request.request_method
-      appsensor_event(username,
-                      request.remote_ip,
-                      request.location.data["latitude"],
-                      request.location.data["longitude"],
-                      "RE1")
-    end
-  end
-
-  def unsupported_http_method(username)
-    unless ["POST", "GET", "DELETE", "HEAD", "PUT", "OPTIONS", "CONNECT"].include? request.request_method
-      appsensor_event(username,
-                      request.remote_ip,
-                      request.location.data["latitude"],
-                      request.location.data["longitude"],
-                      "RE2")
-    end
-  end
-
-  def additional_data_in_request(username)
-    if request.post?
-      uri = URI.parse(request.original_url)
-      url_params = CGI.parse(uri.query) if uri.query
-      url_param_for_post = url_params.keys.any?{ |p| params.include?(p)} if url_params
-    end
-    http_headers = request.headers.env.keys
-    duplicated_header = http_headers.count != http_headers.uniq.count
-    # data_params = params.except("action", "controller")
-    if duplicated_header || url_param_for_post #|| !data_params.empty? || !data_params.permitted?
-      appsensor_event(username,
-                      request.remote_ip,
-                      request.location.data["latitude"],
-                      request.location.data["longitude"],
-                      "RE5")
-    end
-  end
-
-  def data_missing_from_request(username)
-    if params.empty?
-      appsensor_event(username,
-                      request.remote_ip,
-                      request.location.data["latitude"],
-                      request.location.data["longitude"],
-                      "RE6")
-    end
-  end
-
-  def unexpected_length_of_param(username)
-    if params_too_long?(params)
-      appsensor_event(username,
-                      request.remote_ip,
-                      request.location.data["latitude"],
-                      request.location.data["longitude"],
-                      "RE7")
-    end
-  end
-
-  def unexpected_type_of_chars_in_param(username)
-    if params_contain_unexpected_chars?(params) || headers_contain_line_break?
-      appsensor_event(username,
-                      request.remote_ip,
-                      request.location.data["latitude"],
-                      request.location.data["longitude"],
-                      "RE8")
-    end
-  end
-
   def modifying_existing_cookie(username)
     response.cookies.keys.each do |cookie|
       if request.cookies.keys.include?(cookie)
@@ -384,6 +384,14 @@ module AppsensorEventHelper
                       request.location.data["longitude"],
                       "CIE1")
     end
+  end
+
+  def high_number_of_logouts
+    appsensor_event(nil,
+                    request.remote_ip,
+                    request.location.data["latitude"],
+                    request.location.data["longitude"],
+                    "STE1")
   end
 
   def high_number_of_logins
