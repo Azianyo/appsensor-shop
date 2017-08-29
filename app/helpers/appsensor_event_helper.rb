@@ -46,6 +46,29 @@ module AppsensorEventHelper
     "AC" => "AccessControl Exception",
     "ST" => "SystemTrend Exception"
   }
+
+  def get_appsensor_reponses
+    uri = URI.parse('http://localhost:8085/api/v1.0/responses')
+    request = Net::HTTP::Get.new(uri, 'Content-Type' => 'application/json')
+    request['X-API-Key'] = 'foobar'
+    request['X-Appsensor-Client-Application-Name2'] = 'myclientapp'
+    res = Net::HTTP.start(uri.hostname, uri.port) do |http|
+      http.request(request)
+    end
+    responses_json = JSON.parse(res.body)
+    responses_json.map{ |json| extract_action_from_response(json) }
+  end
+
+  def extract_action_from_response(json)
+    response = { action: json["action"],
+                 user: json["user"]["username"] }
+    response.merge!(interval: json["interval"]) if json["interval"]
+    response
+  end
+
+  def respond_to_threat
+  end
+
   def appsensor_event(username, users_ip, latitude=0, longitude=0, event_label)
     uri = URI.parse('http://localhost:8085/api/v1.0/events')
     request = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
@@ -109,7 +132,7 @@ module AppsensorEventHelper
     if request.post?
       uri = URI.parse(request.original_url)
       url_params = CGI.parse(uri.query) if uri.query
-      url_param_for_post = url_params.keys.any?{ |p| params.include?(p)} if url_params
+      url_param_for_post = url_params.keys.any?{ |p| params.include?(p) } if url_params
     end
     http_headers = request.headers.env.keys
     duplicated_header = http_headers.count != http_headers.uniq.count
