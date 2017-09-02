@@ -35,7 +35,8 @@ module AppsensorEventHelper
   "EE2" => "Unexpected Encoding Used",
   "CIE1" => "Blacklist Inspection for Common SQL Injection Values",
   "STE1" => "High Number of Logouts Across The Site",
-  "STE2" => "High Number of Logins Across The Site"
+  "STE2" => "High Number of Logins Across The Site",
+  "CS1" => "Invalid CSRF Token"
   }
 
   APPSENSOR_EVENT_TYPES = {
@@ -44,7 +45,8 @@ module AppsensorEventHelper
     "RE" => "Request Exception",
     "SE" => "Session Exception",
     "AC" => "AccessControl Exception",
-    "ST" => "SystemTrend Exception"
+    "ST" => "SystemTrend Exception",
+    "CS" => "CSRF Exception"
   }
 
   def get_appsensor_reponses
@@ -329,7 +331,11 @@ module AppsensorEventHelper
   end
 
   def deleting_existing_cookie(username)
-    standard_cookies = ["__utma", "guest_token","JSESSIONID", "_solidus_demo_session"]
+    standard_cookies = if try(:spree_current_user) || try(:current_admin)
+                        ["__utma", "guest_token","JSESSIONID", "_solidus_demo_session"]
+                       else
+                        ["__utma", "guest_token","JSESSIONID"]
+                       end
     unless (standard_cookies - request.cookies.keys).empty?
       appsensor_event(username,
                       request.remote_ip,
@@ -425,5 +431,13 @@ module AppsensorEventHelper
                       request.location.data["longitude"],
                       "STE2")
     end
+  end
+
+  def invalid_csrf_token(username)
+    appsensor_event(username,
+                    request.remote_ip,
+                    request.location.data["latitude"],
+                    request.location.data["longitude"],
+                    "CS1")
   end
 end

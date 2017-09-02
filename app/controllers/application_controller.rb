@@ -10,6 +10,7 @@ class ApplicationController < ActionController::Base
   rescue_from ActiveRecord::RecordNotFound,        with: :not_found
   rescue_from ActionController::MethodNotAllowed,  with: :weird_http_methods
   rescue_from ActionController::UnknownHttpMethod, with: :weird_http_methods
+  rescue_from ActionController::InvalidAuthenticityToken, with: :invalid_authenticity_token
 
   def check_for_appsensor_events
     user = get_current_user
@@ -34,6 +35,11 @@ class ApplicationController < ActionController::Base
     user = get_current_user
     unexpected_http_method(user)
     unsupported_http_method(user)
+  end
+
+  def invalid_authenticity_token
+    user = get_current_user
+    invalid_csrf_token(user)
   end
 
   def not_found
