@@ -179,7 +179,8 @@ module AppsensorEventHelper
   end
 
   def use_of_multiple_usernames(username)
-    if AuthenticationAttempt.where(session_id: session.id).try(:last).try(:username) != username
+    last_auth_attempt = AuthenticationAttempt.where(session_id: session.id).try(:last)
+    if last_auth_attempt && last_auth_attempt.try(:username) != username
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
@@ -332,9 +333,9 @@ module AppsensorEventHelper
 
   def deleting_existing_cookie(username)
     standard_cookies = if try(:spree_current_user) || try(:current_admin)
-                        ["__utma", "guest_token","JSESSIONID", "_solidus_demo_session"]
+                        ["guest_token", "_solidus_demo_session"]
                        else
-                        ["__utma", "guest_token","JSESSIONID"]
+                        ["guest_token"]
                        end
     unless (standard_cookies - request.cookies.keys).empty?
       appsensor_event(username,
@@ -356,8 +357,9 @@ module AppsensorEventHelper
   end
 
   def source_location_change(username)
-    if session.id &&
-       AuthenticationAttempt.where(session_id: session.id).try(:last).try(:ip_address) != request.remote_ip
+    last_auth_attempt = AuthenticationAttempt.where(session_id: session.id).try(:last)
+    if last_auth_attempt && session.id &&
+       last_auth_attempt.try(:ip_address) != request.remote_ip
         appsensor_event(username,
                         request.remote_ip,
                         request.location.data["latitude"],
@@ -367,8 +369,9 @@ module AppsensorEventHelper
   end
 
   def user_agent_change(username)
-    if session.id &&
-      AuthenticationAttempt.where(session_id: session.id).try(:last).try(:user_agent) != request.headers["HTTP_USER_AGENT"]
+    last_auth_attempt = AuthenticationAttempt.where(session_id: session.id).try(:last)
+    if last_auth_attempt && session.id &&
+       last_auth_attempt.try(:user_agent) != request.headers["HTTP_USER_AGENT"]
       appsensor_event(username,
                       request.remote_ip,
                       request.location.data["latitude"],
