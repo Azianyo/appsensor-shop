@@ -7,8 +7,8 @@ module AppsensorEventHelper
   APPSENSOR_EVENT_MESSAGES = {
   "RE1" => "Unexpected HTTP Command",
   "RE2" => "Attempt to Invoke Unsupported HTTP Method",
-  "RE6" => "Data Missing from Request",
   "RE5" => "Additional/Duplicated Data in Request",
+  "RE6" => "Data Missing from Request",
   "RE7" => "Unexpected Quantity of Characters in Parameter",
   "RE8" => "Unexpected Type of Characters in Parameter",
   "AE1" => "Use of Multiple Usernames",
@@ -45,6 +45,8 @@ module AppsensorEventHelper
     "RE" => "Request Exception",
     "SE" => "Session Exception",
     "AC" => "AccessControl Exception",
+    "EE" => "Encoding Exception",
+    "CI" => "Command Injection Exception",
     "ST" => "SystemTrend Exception",
     "CS" => "CSRF Exception"
   }
