@@ -334,6 +334,7 @@ module AppsensorEventHelper
   end
 
   def deleting_existing_cookie(username)
+    return if request.cookies.empty?
     standard_cookies = if try(:spree_current_user) || try(:current_admin)
                         ["guest_token", "_solidus_demo_session"]
                        else
@@ -429,7 +430,7 @@ module AppsensorEventHelper
   end
 
   def high_number_of_logins
-    if AuthenticationAttempt.where("created_at >= ?", DateTime.now - 1.hour).count > 100
+    if AuthenticationAttempt.where("created_at >= ?", DateTime.now - 1.hour).count > 20
       appsensor_event(nil,
                       request.remote_ip,
                       request.location.data["latitude"],

@@ -20,6 +20,7 @@ module AppsensorAdditionalHelper
 
   def params_too_long?(params)
     params.any? do |k,v|
+      next if v.nil?
       if v.respond_to?(:keys)
         params_too_long?(v)
       else
