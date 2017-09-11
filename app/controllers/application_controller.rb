@@ -13,6 +13,7 @@ class ApplicationController < ActionController::Base
   rescue_from ActionController::InvalidAuthenticityToken, with: :invalid_authenticity_token
 
   def check_for_appsensor_events
+    poll_for_response
     user = get_current_user
     unexpected_http_method(user)
     unsupported_http_method(user)

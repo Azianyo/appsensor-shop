@@ -70,7 +70,28 @@ module AppsensorEventHelper
     response
   end
 
-  def respond_to_threat
+  def logout_user(user)
+  end
+
+  def lockout_user(user, interval)
+  end
+
+  def disable_auth(interval)
+  end
+
+  def poll_for_response
+    responses = get_appsensor_reponses
+    responses.each do |response|
+      case response[:action]
+      when "logout"
+        logout_user(response[:user])
+      when "disableUser"
+        lockout_user(response[:user], response[:interval])
+      when "disableComponent"
+        disable_auth(response[:interval])
+      else
+      end
+    end
   end
 
   def appsensor_event(username, users_ip, latitude=0, longitude=0, event_label)
