@@ -16,6 +16,18 @@ class Spree::UserSessionsController < Devise::SessionsController
 
   def create
     appsensor_scan(params)
+    if check_user_lockout
+      respond_to do |format|
+        format.html do
+          flash.now[:error] = "You have been locked out of your account."
+          render :new and return
+        end
+        format.js do
+          render json: { error: t('devise.failure.invalid') },
+            status: :unprocessable_entity and return
+        end
+      end
+    end
     authenticate_spree_user!
     if spree_user_signed_in?
       create_auth_attempt(true)
@@ -45,6 +57,12 @@ class Spree::UserSessionsController < Devise::SessionsController
 
   def required_params
     ["utf8", "authenticity_token", {"spree_user" => ["email", "password", "remember_me"]}, "commit", "controller", "action"]
+  end
+
+  def check_user_lockout
+    user = Spree::User.find_by(email: params["spree_user"]["email"])
+    return false if user.nil? || user.locked_until.nil?
+    DateTime.now <= user.locked_until
   end
 
   def appsensor_scan(params)

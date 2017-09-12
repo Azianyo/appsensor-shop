@@ -65,15 +65,31 @@ module AppsensorEventHelper
 
   def extract_action_from_response(json)
     response = { action: json["action"],
-                 user: json["user"]["username"] }
+                 user: json["user"]["username"],
+                 timestamp: json["timestamp"]
+               }
     response.merge!(interval: json["interval"]) if json["interval"]
     response
   end
 
-  def logout_user(user)
+  def logout_user(username)
+    user = Spree::User.find_by(email: username)
+    if user
+      sign_out user
+      puts "User #{username} has been signed out"
+    end
   end
 
-  def lockout_user(user, interval)
+  def lockout_user(username, interval, timestamp)
+    username = "admin3@example.com"
+    user = Spree::User.find_by(email: username)
+    return unless user
+    if user.locked_until
+      return if DateTime.now <= user.locked_until
+    end
+    lockout_date = DateTime.now + interval["duration"].to_i.send(interval["unit"].to_sym)
+    user.update_attributes(locked_until: lockout_date)
+    sign_out user
   end
 
   def disable_auth(interval)
@@ -85,9 +101,9 @@ module AppsensorEventHelper
       case response[:action]
       when "logout"
         logout_user(response[:user])
-      when "disableUser"
-        lockout_user(response[:user], response[:interval])
-      when "disableComponent"
+      when "disableUser", "disableComponentForSpecificUser"
+        lockout_user(response[:user], response[:interval], response[:timestamp])
+      when "disable", "disableComponent"
         disable_auth(response[:interval])
       else
       end
@@ -100,6 +116,7 @@ module AppsensorEventHelper
     request['X-API-Key'] = 'foobar'
     request['X-Appsensor-Client-Application-Name2'] = 'myclientapp'
     username = "null user" if username.blank?
+    username = username.email if username.is_a? Spree::User
     body = { user:
               { username: username,
                 ipAddress:
