@@ -65,6 +65,10 @@ class Spree::UserSessionsController < Devise::SessionsController
     DateTime.now <= user.locked_until
   end
 
+  def check_auth_disabled
+    DateTime.now <= SolidusDemo::Application.config.disable_auth_end_date
+  end
+
   def appsensor_scan(params)
     username = params["spree_user"]["email"]
     password = params["spree_user"]["password"]

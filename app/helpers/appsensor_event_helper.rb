@@ -1,5 +1,6 @@
 require 'net/http'
 require 'time'
+require 'csv'
 
 module AppsensorEventHelper
   include AppsensorAdditionalHelper
@@ -80,19 +81,46 @@ module AppsensorEventHelper
     end
   end
 
+
   def lockout_user(username, interval, timestamp)
+    return unless interval
+    time_period = interval["duration"].to_i.send(interval["unit"].to_sym)
+    lockout_date = (timestamp.to_datetime.in_time_zone + time_period)
     username = "admin3@example.com"
     user = Spree::User.find_by(email: username)
     return unless user
-    if user.locked_until
-      return if DateTime.now <= user.locked_until
+    if user.locked_until.nil?
+      user.update_attributes(locked_until: lockout_date)
+      sign_out user
     end
-    lockout_date = DateTime.now + interval["duration"].to_i.send(interval["unit"].to_sym)
+    return if timestamp.to_datetime.in_time_zone < user.locked_until
+    return if DateTime.now.in_time_zone <= user.locked_until
     user.update_attributes(locked_until: lockout_date)
     sign_out user
   end
 
-  def disable_auth(interval)
+  def disable_auth_response(interval, timestamp)
+    return unless interval
+    interval["duration"] = "2"
+    interval["unit"] = "minutes"
+    time_period = interval["duration"].to_i.send(interval["unit"].to_sym)
+    new_disable_auth_date = timestamp.to_datetime.in_time_zone + time_period
+    disable_auth_date = SolidusDemo::Application.config.disable_auth_end_date
+    if disable_auth_date.nil?
+      disable_auth(new_disable_auth_date)
+      return
+    else
+      return if timestamp.to_datetime.in_time_zone < disable_auth_date
+      return if DateTime.now.in_time_zone <= disable_auth_date
+      disable_auth(new_disable_auth_date)
+    end
+  end
+
+  def disable_auth(new_disable_auth_date)
+    Spree::User.all.each do |user|
+      sign_out user
+    end
+    SolidusDemo::Application.config.disable_auth_end_date = new_disable_auth_date
   end
 
   def poll_for_response
@@ -104,7 +132,7 @@ module AppsensorEventHelper
       when "disableUser", "disableComponentForSpecificUser"
         lockout_user(response[:user], response[:interval], response[:timestamp])
       when "disable", "disableComponent"
-        disable_auth(response[:interval])
+        disable_auth_response(response[:interval], response[:timestamp])
       else
       end
     end
@@ -112,9 +140,9 @@ module AppsensorEventHelper
 
   def appsensor_event(username, users_ip, latitude=0, longitude=0, event_label)
     uri = URI.parse('http://localhost:8085/api/v1.0/events')
-    request = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
-    request['X-API-Key'] = 'foobar'
-    request['X-Appsensor-Client-Application-Name2'] = 'myclientapp'
+    appsensor_request = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
+    appsensor_request['X-API-Key'] = 'foobar'
+    appsensor_request['X-Appsensor-Client-Application-Name2'] = 'myclientapp'
     username = "null user" if username.blank?
     username = username.email if username.is_a? Spree::User
     body = { user:
@@ -130,12 +158,56 @@ module AppsensorEventHelper
               metadata: []
             }
 
-    request.body = body.to_json
+    appsensor_request.body = body.to_json
     puts get_appsensor_event_message(event_label)
     res = Net::HTTP.start(uri.hostname, uri.port) do |http|
-      http.request(request)
+      http.request(appsensor_request)
     end
     puts res
+    write_to_report_file(event_label)
+  end
+
+  def write_to_report_file(event_label)
+    raw_request = get_raw_request
+    if File.exist?("report.csv")
+      CSV.open("report.csv", "a+") do |csv|
+        csv << create_csv_row(event_label)
+      end
+    else
+      CSV.open("report.csv", "wb") do |csv|
+        csv << ["Request URL", "Request Method", "Request Headers" ,"Request body", "Event label", "Event type"]
+        csv << create_csv_row(event_label)
+      end
+    end
+  end
+
+  def create_csv_row(event_label)
+    [ "#{raw_request["Request URL"]}",
+      "#{raw_request["Request Method"]}",
+      "\"#{extract_headers(raw_request)}\"",
+      "#{request.body.string}",
+      "#{event_label}",
+      "#{get_appsensor_event_type(event_label)}"]
+  end
+
+  def get_raw_request
+      req_headers = env.select {|k,v| k.start_with? 'HTTP_' || k.in?(ActionDispatch::Http::Headers::CGI_VARIABLES)}
+          .collect {|pair| [pair[0].sub(/^HTTP_/, '').split('_').map(&:titleize).join('-'), pair[1]]}
+          .sort
+
+      req_hash = {
+        "REQUEST" => "",
+        "Remote Address" => request.ip,
+        "Request URL" => request.url,
+        "Request Method" => request.request_method,
+        "REQUEST HEADERS" => ""
+      }
+      req_headers.to_a.each {|i| req_hash["\t" + i.first] = i.last }
+      req_hash
+  end
+
+  def extract_headers(raw_request)
+    raw_request.select{|k, v| k.starts_with?("\t")}.map{|k,v| "#{k}=#{v}"}.join.to_s.strip.gsub!("\t", "\n")
   end
 
   def get_appsensor_event_type(event_label)
