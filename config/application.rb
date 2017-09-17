@@ -36,5 +36,6 @@ module SolidusDemo
     # Do not swallow errors in after_commit/after_rollback callbacks.
     config.active_record.raise_in_transactional_callbacks = true
     config.disable_auth_end_date = nil
+    config.disable_app_end_date = nil
   end
 end

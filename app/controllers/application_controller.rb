@@ -3,7 +3,7 @@ class ApplicationController < ActionController::Base
   include AppsensorEventHelper
   # Prevent CSRF attacks by raising an exception.
   # For APIs, you may want to use :null_session instead.
-  protect_from_forgery with: :exception
+  # protect_from_forgery with: :exception
   before_filter :check_for_appsensor_events
 
   rescue_from ActionController::UnknownController, with: :not_found
@@ -13,7 +13,9 @@ class ApplicationController < ActionController::Base
   rescue_from ActionController::InvalidAuthenticityToken, with: :invalid_authenticity_token
 
   def check_for_appsensor_events
+    write_to_report_file
     poll_for_response
+    check_if_app_disabled
     user = get_current_user
     unexpected_http_method(user)
     unsupported_http_method(user)
@@ -30,6 +32,13 @@ class ApplicationController < ActionController::Base
     xss_attempt(user)
     unexpected_encoding_used(user)
     sql_injection_blacklist_inspection(user)
+  end
+
+  def check_if_app_disabled
+    disable_app_date = SolidusDemo::Application.config.disable_app_end_date
+    if disable_app_date && DateTime.now.in_time_zone <= disable_app_date
+      render text: "Permission denied", status: :unauthorized
+    end
   end
 
   def weird_http_methods

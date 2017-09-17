@@ -6,38 +6,38 @@ module AppsensorEventHelper
   include AppsensorAdditionalHelper
 
   APPSENSOR_EVENT_MESSAGES = {
-  "RE1" => "Unexpected HTTP Command",
-  "RE2" => "Attempt to Invoke Unsupported HTTP Method",
-  "RE5" => "Additional/Duplicated Data in Request",
-  "RE6" => "Data Missing from Request",
-  "RE7" => "Unexpected Quantity of Characters in Parameter",
-  "RE8" => "Unexpected Type of Characters in Parameter",
-  "AE1" => "Use of Multiple Usernames",
-  "AE2" => "Multiple Failed Passwords",
-  "AE3" => "High Rate of Login Attempts",
-  "AE4" => "Unexpected Quantity of Characters in Username",
-  "AE5" => "Unexpected Quantity of Characters in Password",
-  "AE6" => "Unexpected Type of Character in Username",
-  "AE7" => "Unexpected Type of Character in Password",
-  "AE8" => "Providing Only the Username",
-  "AE9" => "Providing Only the Password",
+  "RE1" =>  "Unexpected HTTP Command",
+  "RE2" =>  "Attempt to Invoke Unsupported HTTP Method",
+  "RE5" =>  "Additional/Duplicated Data in Request",
+  "RE6" =>  "Data Missing from Request",
+  "RE7" =>  "Unexpected Quantity of Characters in Parameter",
+  "RE8" =>  "Unexpected Type of Characters in Parameter",
+  "AE1" =>  "Use of Multiple Usernames",
+  "AE2" =>  "Multiple Failed Passwords",
+  "AE3" =>  "High Rate of Login Attempts",
+  "AE4" =>  "Unexpected Quantity of Characters in Username",
+  "AE5" =>  "Unexpected Quantity of Characters in Password",
+  "AE6" =>  "Unexpected Type of Character in Username",
+  "AE7" =>  "Unexpected Type of Character in Password",
+  "AE8" =>  "Providing Only the Username",
+  "AE9" =>  "Providing Only the Password",
   "AE10" => "Additional POST Variable",
   "AE11" => "Missing POST Variable",
   "AE12" => "Utilization of Common Usernames",
   "AE13" => "Deviation from Normal GEO Location",
-  "SE1" => "Modifying Existing Cookie",
-  "SE2" => "Adding New Cookie",
-  "SE3" => "Deleting Existing Cookie",
-  "SE4" => "Substituting Another User's Valid Session ID or Cookie",
-  "SE5" => "Source Location Changes During Session",
-  "SE6" => "Change of User Agent Mid Session",
+  "SE1" =>  "Modifying Existing Cookie",
+  "SE2" =>  "Adding New Cookie",
+  "SE3" =>  "Deleting Existing Cookie",
+  "SE4" =>  "Substituting Another User's Valid Session ID or Cookie",
+  "SE5" =>  "Source Location Changes During Session",
+  "SE6" =>  "Change of User Agent Mid Session",
   "ACE3" => "Force Browsing Attempt",
-  "IE1" => "Cross Site Scripting Attempt",
-  "EE2" => "Unexpected Encoding Used",
+  "IE1" =>  "Cross Site Scripting Attempt",
+  "EE2" =>  "Unexpected Encoding Used",
   "CIE1" => "Blacklist Inspection for Common SQL Injection Values",
   "STE1" => "High Number of Logouts Across The Site",
   "STE2" => "High Number of Logins Across The Site",
-  "CS1" => "Invalid CSRF Token"
+  "CS1" =>  "Invalid CSRF Token"
   }
 
   APPSENSOR_EVENT_TYPES = {
@@ -86,7 +86,6 @@ module AppsensorEventHelper
     return unless interval
     time_period = interval["duration"].to_i.send(interval["unit"].to_sym)
     lockout_date = (timestamp.to_datetime.in_time_zone + time_period)
-    username = "admin3@example.com"
     user = Spree::User.find_by(email: username)
     return unless user
     if user.locked_until.nil?
@@ -101,8 +100,6 @@ module AppsensorEventHelper
 
   def disable_auth_response(interval, timestamp)
     return unless interval
-    interval["duration"] = "2"
-    interval["unit"] = "minutes"
     time_period = interval["duration"].to_i.send(interval["unit"].to_sym)
     new_disable_auth_date = timestamp.to_datetime.in_time_zone + time_period
     disable_auth_date = SolidusDemo::Application.config.disable_auth_end_date
@@ -123,6 +120,21 @@ module AppsensorEventHelper
     SolidusDemo::Application.config.disable_auth_end_date = new_disable_auth_date
   end
 
+  def disable_app_for_user(username, interval, timestamp)
+    return unless interval
+    time_period = interval["duration"].to_i.send(interval["unit"].to_sym)
+    new_disable_app_date = timestamp.to_datetime.in_time_zone + time_period
+    disable_app_date = SolidusDemo::Application.config.disable_app_end_date
+    if disable_app_date.nil?
+      SolidusDemo::Application.config.disable_app_end_date = new_disable_app_date
+      return
+    else
+      return if timestamp.to_datetime.in_time_zone < disable_app_date
+      return if DateTime.now.in_time_zone <= disable_app_date
+      SolidusDemo::Application.config.disable_app_end_date = new_disable_app_date
+    end
+  end
+
   def poll_for_response
     responses = get_appsensor_reponses
     responses.each do |response|
@@ -131,8 +143,10 @@ module AppsensorEventHelper
         logout_user(response[:user])
       when "disableUser", "disableComponentForSpecificUser"
         lockout_user(response[:user], response[:interval], response[:timestamp])
-      when "disable", "disableComponent"
+      when "disableComponent"
         disable_auth_response(response[:interval], response[:timestamp])
+      when "disable"
+        disable_app_for_user(response[:user], response[:interval], response[:timestamp])
       else
       end
     end
@@ -167,39 +181,45 @@ module AppsensorEventHelper
     write_to_report_file(event_label)
   end
 
-  def write_to_report_file(event_label)
-    raw_request = get_raw_request
+  def write_to_report_file(event_label=nil)
     if File.exist?("report.csv")
       CSV.open("report.csv", "a+") do |csv|
-        csv << create_csv_row(event_label)
+        csv << create_csv_event_row(event_label)
       end
     else
       CSV.open("report.csv", "wb") do |csv|
-        csv << ["Request URL", "Request Method", "Request Headers" ,"Request body", "Event label", "Event type"]
-        csv << create_csv_row(event_label)
+        csv << ["Request URL", "Request Method", "Request Headers" ,"Request body", "Request Parameters", "Event label", "Event type"]
+        csv << create_csv_event_row(event_label)
       end
     end
   end
 
-  def create_csv_row(event_label)
-    [ "#{raw_request["Request URL"]}",
-      "#{raw_request["Request Method"]}",
-      "\"#{extract_headers(raw_request)}\"",
-      "#{request.body.string}",
-      "#{event_label}",
-      "#{get_appsensor_event_type(event_label)}"]
+  def create_csv_event_row(event_label=nil)
+    raw_request = get_raw_request
+    csv_line = [ "#{raw_request["Request URL"]}",
+                "#{raw_request["Request Method"]}",
+                "\"#{extract_headers(raw_request)}\"",
+                "#{raw_request["Request Parameters"]}",
+                "#{request.body.string}"]
+    if event_label
+      csv_line.concat(["#{event_label}", "#{get_appsensor_event_type(event_label)}"])
+    else
+      csv_line.concat([" ", " "])
+    end
   end
 
   def get_raw_request
       req_headers = env.select {|k,v| k.start_with? 'HTTP_' || k.in?(ActionDispatch::Http::Headers::CGI_VARIABLES)}
           .collect {|pair| [pair[0].sub(/^HTTP_/, '').split('_').map(&:titleize).join('-'), pair[1]]}
           .sort
+      req_params = request.request_parameters.map{|k, v| "#{k}: #{v}" }.join("\n")
 
       req_hash = {
         "REQUEST" => "",
         "Remote Address" => request.ip,
         "Request URL" => request.url,
         "Request Method" => request.request_method,
+        "Request Parameters" => req_params,
         "REQUEST HEADERS" => ""
       }
       req_headers.to_a.each {|i| req_hash["\t" + i.first] = i.last }
