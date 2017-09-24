@@ -145,7 +145,7 @@ module AppsensorEventHelper
         lockout_user(response[:user], response[:interval], response[:timestamp])
       when "disableComponent"
         disable_auth_response(response[:interval], response[:timestamp])
-      when "disable"
+      when "disable", "disableComponentForAllUsers"
         disable_app_for_user(response[:user], response[:interval], response[:timestamp])
       else
       end
@@ -464,6 +464,7 @@ module AppsensorEventHelper
   end
 
   def deleting_existing_cookie(username)
+    return
     return if request.cookies.empty?
     standard_cookies = if try(:spree_current_user) || try(:current_admin)
                         ["guest_token", "_solidus_demo_session"]
